@@ -11,7 +11,7 @@ LiquidCrystal lcd(6,7,8,9,10,11);// setting led values
 int temp=0,i=0;
 int led=0;
 
-char msg[50];
+char str[50];
 
 
 void setup() 
@@ -36,12 +36,12 @@ void setup()
     lcd.print("Automation Chabot");
     delay(2000);
     lcd.clear();
-    
-    Serial.println("AT+CNMI=2,2,0,0,0");
-    delay(500);
     Serial.println("AT+CMGF=1");
     delay(1000);
     
+    Serial.println("AT+CNMI=2,2,0,0,0");
+    delay(500);
+   
     lcd.setCursor(0,0);
     lcd.print("SYSTEM READY!");
 
@@ -51,6 +51,36 @@ void loop() {
      digitalWrite(Tv, HIGH);
      digitalWrite(Light,HIGH);
      digitalWrite(Fan,HIGH);
+     //ReceiveMessage()
+     myserialEvent();
+     
     
       
 }
+
+
+void myserialEvent() 
+ {
+  while(mySerial.available()) 
+  {
+    Serial.println("available");
+    if(mySerial.find('#'))
+    
+    { Serial.println("in loop");
+      
+      
+      while (mySerial.available()) 
+      {
+        Serial.println("available 2");
+      char inChar=mySerial.read();
+      str[i++]=inChar;
+      if(inChar=='*')
+      {
+        Serial.println("out of loop");
+        temp=1;
+        return;
+      } 
+      } 
+    }
+   }
+ }
