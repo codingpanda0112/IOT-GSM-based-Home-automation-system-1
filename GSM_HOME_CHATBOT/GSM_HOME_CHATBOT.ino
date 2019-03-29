@@ -201,9 +201,9 @@ void command()
     }   
     else if (!(strncmp(str,"currtemp",8)))
     {
+      tempflag=1;
       float tep=check_temp();
       String msg="current temperature:"+String(tep)+"C";
-
       delay(1000);
       lcd.setCursor(0,0); 
       lcd.print("temperature: ");    
@@ -212,7 +212,9 @@ void command()
       lcd.print(String(tep));
       delay(1000);
       sendMessage(9);
+      //Donot change this delay needed for short term display
       delay(5000);
+      tempflag=0;
     }  
      
 }
