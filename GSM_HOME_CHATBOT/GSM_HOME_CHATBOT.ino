@@ -8,14 +8,14 @@ LiquidCrystal lcd(6,7,8,9,10,11);// setting led values
 #define Fan 3
 #define Light 4
 #define Tv 5
-#define tempPin 2
+#define tempPin 0
 
-int commandFound=0;
+int commandFound=0,tempflag=0;
 int led=0;
 //int i=0;
 float tempr;
 
-char str[50];
+char str[70];
 String messageread="";
 
 
@@ -81,7 +81,6 @@ void loop() {
     {
       command();
       commandFound=0;
-     // memset(str, 0, sizeof(str));
       delay(2000);
     }
       
@@ -92,20 +91,21 @@ void myserialEvent()
 { 
   while(mySerial.available()) 
   {   int i=0;
-      Serial.println("available");
+      //Serial.println("available");
      
       if(mySerial.find('#')!=0)  
       {  
-          Serial.println("in loop");      
+          //Serial.println("in loop");      
           while (mySerial.available()) 
           {
-                Serial.println("available 2");
+                //Serial.println("available 2");
                 char inChar=mySerial.read();
                 messageread=messageread+inChar;
+                //Serial.println(inChar);
                 str[i++]=inChar;
                 if(inChar=='*')
                 {
-                    Serial.println("out of loop");
+                    Serial.println("message found!");
                     commandFound=1;
                     Serial.println(str);
                     
@@ -199,13 +199,17 @@ void command()
       sendMessage(8);
       delay(5000);
     }   
-    else if (!(strncmp(str,"current temp ?",7)))
+    else if (!(strncmp(str,"currtemp",8)))
     {
       float tep=check_temp();
-      
+      String msg="current temperature:"+String(tep)+"C";
+
+      delay(1000);
       lcd.setCursor(0,0); 
-      lcd.print("temperature: ");
-      String msg="current temperature:"+String(tep);
+      lcd.print("temperature: ");    
+      Serial.println(msg);
+      lcd.setCursor(0,1);
+      lcd.print(String(tep));
       delay(1000);
       sendMessage(9);
       delay(5000);
@@ -243,7 +247,9 @@ void sendMessage(int device)
   Serial.println(message);
   mySerial.println("AT+CMGF=1");    //Sets the GSM Module in Text Mode
   delay(1000);  // Delay of 1000 milli seconds or 1 second
-  mySerial.println("AT+CMGS=\"+919902759513\"\r"); // Replace x with mobile number
+  //mySerial.println("AT+CMGS=\"+919902759513\"\r"); 
+  // Replace x with mobile number
+  mySerial.println("AT+CMGS=\"+919008791799\"\r");
   delay(1000);
   mySerial.println(message);// The SMS text you want to send
   delay(100);
@@ -253,16 +259,20 @@ void sendMessage(int device)
 }
 
 float check_temp()
-{
-  tempr = analogRead(tempPin);
+{ 
+  Serial.println("temp loop");
+  float temprs;
+  temprs = analogRead(tempPin);
+  Serial.println(temprs);
    // read analog volt from sensor and save to variable temp
-   tempr = tempr * 0.48828125;
+   tempr = temprs * 0.48828125;
    // convert the analog volt to its temperature equivalent
-   Serial.print("TEMPERATURE = ");
-   Serial.print(tempr); // display temperature value
-   Serial.print("*C");
-   Serial.println();
    delay(5000); 
+  // Serial.print("TEMPERATURE = ");
+   //Serial.print(tempr); // display temperature value
+   //Serial.print("*C");
+   //rial.println();
+   
    return tempr;
   
 }
