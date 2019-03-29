@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include<string.h>
 #include<LiquidCrystal.h>
 
 SoftwareSerial mySerial(12, 13);//Setting the rx, tx respectively for arduino
@@ -7,10 +8,12 @@ LiquidCrystal lcd(6,7,8,9,10,11);// setting led values
 #define Fan 3
 #define Light 4
 #define Tv 5
-#define Temperature 2
+#define tempPin 2
 
-int commandFound=0,i=0;
+int commandFound=0;
 int led=0;
+//int i=0;
+float tempr;
 
 char str[50];
 String messageread="";
@@ -51,13 +54,20 @@ void setup()
     lcd.print("Fan   Light  TV ");
     lcd.setCursor(0,1);
     lcd.print("OFF    OFF   OFF ");
+    digitalWrite(Fan, HIGH);
+    digitalWrite(Light,HIGH);
+    digitalWrite(Tv,HIGH);
+    delay(2000);
+    digitalWrite(Fan, LOW);
+    digitalWrite(Light,LOW);
+    digitalWrite(Tv,LOW);
 
 }
 
 void loop() {
-    // digitalWrite(Fan, HIGH);
-     //digitalWrite(Light,HIGH);
-     //digitalWrite(Tv,HIGH);
+    //digitalWrite(Fan, HIGH);
+    //digitalWrite(Light,HIGH);
+    //digitalWrite(Tv,HIGH);
      
     lcd.setCursor(0,0);
     lcd.print("Fan   Light  TV");
@@ -71,6 +81,7 @@ void loop() {
     {
       command();
       commandFound=0;
+     // memset(str, 0, sizeof(str));
       delay(2000);
     }
       
@@ -78,13 +89,13 @@ void loop() {
 
 
 void myserialEvent() 
-{
+{ 
   while(mySerial.available()) 
-  {
+  {   int i=0;
       Serial.println("available");
      
       if(mySerial.find('#')!=0)  
-      { 
+      {  
           Serial.println("in loop");      
           while (mySerial.available()) 
           {
@@ -116,16 +127,16 @@ void command()
       digitalWrite(Tv, HIGH);
       lcd.setCursor(13,1); 
       lcd.print("ON    ");
-      delay(5000);
+      delay(1000);
       sendMessage(1);
       delay(5000);
     }
     else if (!(strncmp(str,"tv off",6)))
     {
-      digitalWrite(Tv, HIGH);
+      digitalWrite(Tv, LOW);
       lcd.setCursor(13,1); 
-      lcd.print("ON    ");
-      delay(5000);
+      lcd.print("Off   ");
+      delay(1000);
       sendMessage(2);
       delay(5000);
     } 
@@ -134,55 +145,72 @@ void command()
       digitalWrite(Light, HIGH);
       lcd.setCursor(7,1); 
       lcd.print("ON    ");
-      delay(5000);
+      delay(1000);
       sendMessage(3);
       delay(5000);
     }
     else if (!(strncmp(str,"light off",9)))
     {
-      digitalWrite(Light, HIGH);
+      digitalWrite(Light, LOW);
       lcd.setCursor(7,1); 
       lcd.print("ON    ");
-      delay(5000);
+      delay(1000);
       sendMessage(4);
       delay(5000);
     } 
     else if (!(strncmp(str,"fan on",6)))
     {
-      digitalWrite(Tv, HIGH);
+      digitalWrite(Fan, HIGH);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
-      delay(5000);
+      delay(1000);
       sendMessage(5);
       delay(5000);
     }   
   else if (!(strncmp(str,"fan off",7)))
     {
-      digitalWrite(Tv, HIGH);
+      digitalWrite(Fan, LOW);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
-      delay(5000);
+      delay(1000);
       sendMessage(6);
       delay(5000);
     } 
     else if (!(strncmp(str,"all on",6)))
     {
       digitalWrite(Tv, HIGH);
-      lcd.setCursor(13,1); 
+      digitalWrite(Fan, HIGH);
+      digitalWrite(Light, HIGH);
+      lcd.setCursor(0,1); 
       lcd.print("ON     ON    ON  ");
-      delay(5000);
+      delay(1000);
       sendMessage(7);
       delay(5000);
     }  
     else if (!(strncmp(str,"all off",7)))
     {
-      digitalWrite(Tv, HIGH);
-      lcd.setCursor(13,1); 
+      digitalWrite(Tv, LOW);
+      digitalWrite(Fan, LOW);
+      digitalWrite(Light, LOW);
+      
+      lcd.setCursor(0,1); 
       lcd.print("Off  Off   Off ");
-      delay(5000);
+      delay(1000);
       sendMessage(8);
       delay(5000);
     }   
+    else if (!(strncmp(str,"current temp ?",7)))
+    {
+      float tep=check_temp();
+      
+      lcd.setCursor(0,0); 
+      lcd.print("temperature: ");
+      String msg="current temperature:"+String(tep);
+      delay(1000);
+      sendMessage(9);
+      delay(5000);
+    }  
+     
 }
  
 void sendMessage(int device)
@@ -207,6 +235,8 @@ void sendMessage(int device)
       break;
     case 8: message="All are off!";
       break;
+    case 9: message="Current room Temperature:"+String(tempr);
+      break;
       default: message="Error";
        
   }
@@ -224,5 +254,15 @@ void sendMessage(int device)
 
 float check_temp()
 {
+  tempr = analogRead(tempPin);
+   // read analog volt from sensor and save to variable temp
+   tempr = tempr * 0.48828125;
+   // convert the analog volt to its temperature equivalent
+   Serial.print("TEMPERATURE = ");
+   Serial.print(tempr); // display temperature value
+   Serial.print("*C");
+   Serial.println();
+   delay(5000); 
+   return tempr;
   
 }
