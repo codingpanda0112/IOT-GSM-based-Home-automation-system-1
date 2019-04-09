@@ -5,9 +5,9 @@
 SoftwareSerial mySerial(12, 13);//Setting the rx, tx respectively for arduino
 LiquidCrystal lcd(6,7,8,9,10,11);// setting led values
 
-#define Fan 4
+#define Fan 5
 #define Light 3
-#define Tv 5
+#define Tv 2
 #define tempPin 0
 
 
@@ -32,26 +32,25 @@ void setup()
     pinMode(Light,OUTPUT);
     pinMode(Tv,OUTPUT);
     
-    if(tempflag!=1){
-        lcd.setCursor(0,0);
-        lcd.print("Iot PROJECT");
-        delay(3000);
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print("GSM Home");
-        lcd.setCursor(0,1);
-        lcd.print("Automation Chabot");
-        delay(2000);
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print("  SYSTEM READY!");
-        delay(2000);
-        lcd.setCursor(0,0);
-        lcd.print("Fan   Light  TV ");
-        lcd.setCursor(0,1);
-        lcd.print("OFF    OFF   OFF ");
-    }
    
+    lcd.setCursor(0,0);
+    lcd.print("Iot PROJECT");
+    delay(3000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("GSM Home");
+    lcd.setCursor(0,1);
+    lcd.print("Automation Chabot");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("  SYSTEM READY!");
+    delay(2000);
+    lcd.setCursor(0,0);
+    lcd.print("Fan   Light  TV ");
+    lcd.setCursor(0,1);
+    lcd.print("OFF    OFF   OFF ");
+      
     Serial.println("AT+CMGF=1");
     delay(1000);
     
@@ -108,16 +107,20 @@ void loop() {
              lcd.setCursor(7,1); 
             lcd.print("OFF   "); 
         }
+    
+        
       
     }
     else
     {
+      lcd.clear();
       lcd.setCursor(0,0); 
       lcd.print("Temperature: ");    
       
       lcd.setCursor(0,1);
       lcd.print(String(temprs));
       tempflag=0;
+      delay(5000);
       
     }
     
@@ -215,7 +218,8 @@ void command()
     else if (!(strncmp(str,"fan on",6)))
     {
      fanflag=1;
-      digitalWrite(Fan, HIGH);
+      //digitalWrite(Fan, HIGH);
+      setFanSpeed(Fan,150);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
       delay(1000);
@@ -225,7 +229,8 @@ void command()
   else if (!(strncmp(str,"fan off",7)))
     {
       fanflag=0;
-      digitalWrite(Fan, LOW);
+      //digitalWrite(Fan, LOW);
+      setFanSpeed(Fan,0);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
       delay(1000);
@@ -234,6 +239,9 @@ void command()
     } 
     else if (!(strncmp(str,"all on",6)))
     {
+      fanflag=1;
+      tvflag=1;
+      lightflag=1;
       digitalWrite(Tv, HIGH);
       digitalWrite(Fan, HIGH);
       digitalWrite(Light, HIGH);
@@ -245,6 +253,9 @@ void command()
     }  
     else if (!(strncmp(str,"all off",7)))
     {
+      fanflag=0;
+      tvflag=0;
+      lightflag=0;
       digitalWrite(Tv, LOW);
       digitalWrite(Fan, LOW);
       digitalWrite(Light, LOW);
@@ -282,6 +293,22 @@ void command()
       sendMessage(10);
       delay(5000);
     } 
+    if(!(strncmp(str,"sfs ",3)))
+    {
+      String Str(str);
+      int speedpoints = Str.substring(4,5).toInt();
+      Serial.println(speedpoints);
+      int speedconv = 50*speedpoints+1;
+      Serial.println(speedconv);
+      fanflag = 1;
+      setFanSpeed(Fan,speedconv);
+      delay(1000);
+      lcd.setCursor(0,1); 
+      lcd.print("ON    ");
+      delay(1000);
+      sendMessage(11);
+      delay(5000);
+    }
      
 }
  
@@ -303,13 +330,15 @@ void sendMessage(int device)
       break;
     case 6: message="Fan is off";
       break;
-    case 7: message="All are  on !";
+    case 7: message="All are on!";
       break;
     case 8: message="All are off!";
       break;
     case 9: message="Current room Temperature:"+String(tempr);
       break;
     case 10: message="Bightness of the light set!";
+      break;
+    case 11: message="Speed of fan is set!";
       break;
       default: message="Error";
        
@@ -349,8 +378,14 @@ float check_temp()
 
 void setBrightness(int led, int brightness) {
   // set the brightness of pin 9:
-  Serial.println("seeting brightness");
+  Serial.println("setting brightness");
   analogWrite(led, brightness);
   // change the brightness for next time through the loop:
+  delay(3000);
+}
+void setFanSpeed(int motor,int speed)
+{
+  Serial.println("Setting fan speed");
+  analogWrite(motor,speed);
   delay(3000);
 }
