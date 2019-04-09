@@ -5,15 +5,17 @@
 SoftwareSerial mySerial(12, 13);//Setting the rx, tx respectively for arduino
 LiquidCrystal lcd(6,7,8,9,10,11);// setting led values
 
-#define Fan 3
-#define Light 4
+#define Fan 4
+#define Light 3
 #define Tv 5
 #define tempPin 0
 
+
 int commandFound=0,tempflag=0;
+int lightflag=0,fanflag=0,tvflag=0;
 int led=0;
 //int i=0;
-float tempr;
+float temprs,tempr;
 
 char str[70];
 String messageread="";
@@ -29,31 +31,34 @@ void setup()
     pinMode(Fan, OUTPUT);
     pinMode(Light,OUTPUT);
     pinMode(Tv,OUTPUT);
-
-    lcd.setCursor(0,0);
-    lcd.print("Iot PROJECT");
-    delay(3000);
-    lcd.clear();
     
-    lcd.setCursor(0,0);
-    lcd.print("GSM Home");
-    lcd.setCursor(0,1);
-    lcd.print("Automation Chabot");
-    delay(2000);
-    lcd.clear();
+    if(tempflag!=1){
+        lcd.setCursor(0,0);
+        lcd.print("Iot PROJECT");
+        delay(3000);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("GSM Home");
+        lcd.setCursor(0,1);
+        lcd.print("Automation Chabot");
+        delay(2000);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("  SYSTEM READY!");
+        delay(2000);
+        lcd.setCursor(0,0);
+        lcd.print("Fan   Light  TV ");
+        lcd.setCursor(0,1);
+        lcd.print("OFF    OFF   OFF ");
+    }
+   
     Serial.println("AT+CMGF=1");
     delay(1000);
     
     Serial.println("AT+CNMI=2,2,0,0,0");
     delay(500);
    
-    lcd.setCursor(0,0);
-    lcd.print("  SYSTEM READY!");
-    delay(2000);
-    lcd.setCursor(0,0);
-    lcd.print("Fan   Light  TV ");
-    lcd.setCursor(0,1);
-    lcd.print("OFF    OFF   OFF ");
+   
     digitalWrite(Fan, HIGH);
     digitalWrite(Light,HIGH);
     digitalWrite(Tv,HIGH);
@@ -68,9 +73,54 @@ void loop() {
     //digitalWrite(Fan, HIGH);
     //digitalWrite(Light,HIGH);
     //digitalWrite(Tv,HIGH);
-     
-    lcd.setCursor(0,0);
-    lcd.print("Fan   Light  TV");
+    
+    if( tempflag!=1)
+    {
+        lcd.setCursor(0,0);
+        lcd.print("Fan   Light  TV");
+        if (fanflag==1)
+        {
+            lcd.setCursor(0,1); 
+            lcd.print("ON    "); 
+        }
+        else
+        {
+          lcd.setCursor(0,1); 
+          lcd.print("OFF   "); 
+        }
+        if(tvflag==1)
+        {
+          lcd.setCursor(13,1); 
+          lcd.print("ON  ");
+        }
+        else
+        {
+          lcd.setCursor(13,1); 
+          lcd.print("OFF "); 
+        }
+        if(lightflag==1)
+        {
+            lcd.setCursor(7,1); 
+            lcd.print("ON    "); 
+        }
+        else
+        {
+             lcd.setCursor(7,1); 
+            lcd.print("OFF   "); 
+        }
+      
+    }
+    else
+    {
+      lcd.setCursor(0,0); 
+      lcd.print("Temperature: ");    
+      
+      lcd.setCursor(0,1);
+      lcd.print(String(temprs));
+      tempflag=0;
+      
+    }
+    
     if(commandFound==0)
     {
        myserialEvent();
@@ -124,6 +174,7 @@ void command()
     Serial.println("command");
     if(!(strncmp(str,"tv on",5)))
     {
+      tvflag=1;
       digitalWrite(Tv, HIGH);
       lcd.setCursor(13,1); 
       lcd.print("ON    ");
@@ -133,6 +184,7 @@ void command()
     }
     else if (!(strncmp(str,"tv off",6)))
     {
+      tvflag=0;
       digitalWrite(Tv, LOW);
       lcd.setCursor(13,1); 
       lcd.print("Off   ");
@@ -142,6 +194,7 @@ void command()
     } 
     else if (!(strncmp(str,"light on",8)))
     {
+      lightflag=1;
       digitalWrite(Light, HIGH);
       lcd.setCursor(7,1); 
       lcd.print("ON    ");
@@ -151,6 +204,7 @@ void command()
     }
     else if (!(strncmp(str,"light off",9)))
     {
+      lightflag=0;
       digitalWrite(Light, LOW);
       lcd.setCursor(7,1); 
       lcd.print("ON    ");
@@ -160,6 +214,7 @@ void command()
     } 
     else if (!(strncmp(str,"fan on",6)))
     {
+     fanflag=1;
       digitalWrite(Fan, HIGH);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
@@ -169,6 +224,7 @@ void command()
     }   
   else if (!(strncmp(str,"fan off",7)))
     {
+      fanflag=0;
       digitalWrite(Fan, LOW);
       lcd.setCursor(0,1); 
       lcd.print("ON    ");
@@ -203,19 +259,29 @@ void command()
     {
       tempflag=1;
       float tep=check_temp();
-      String msg="current temperature:"+String(tep)+"C";
+      String msg="current temperature:"+String(temprs)+"C";
       delay(1000);
-      lcd.setCursor(0,0); 
-      lcd.print("temperature: ");    
+      delay(1000);
       Serial.println(msg);
-      lcd.setCursor(0,1);
-      lcd.print(String(tep));
-      delay(1000);
       sendMessage(9);
       //Donot change this delay needed for short term display
       delay(5000);
-      tempflag=0;
-    }  
+    } 
+    if(!(strncmp(str,"slb ",3)))
+    {
+      String Str(str);
+      //Serial.println(Str.substring(4,5));
+      int bright=Str.substring(4,5).toInt();
+      int brightfloat=51*bright;
+      lightflag=1;
+      setBrightness(Light,brightfloat);
+      delay(1000);
+      lcd.setCursor(7,1); 
+      lcd.print("ON    ");
+      delay(1000);
+      sendMessage(10);
+      delay(5000);
+    } 
      
 }
  
@@ -243,6 +309,8 @@ void sendMessage(int device)
       break;
     case 9: message="Current room Temperature:"+String(tempr);
       break;
+    case 10: message="Bightness of the light set!";
+      break;
       default: message="Error";
        
   }
@@ -263,7 +331,7 @@ void sendMessage(int device)
 float check_temp()
 { 
   Serial.println("temp loop");
-  float temprs;
+  temprs;
   temprs = analogRead(tempPin);
   Serial.println(temprs);
    // read analog volt from sensor and save to variable temp
@@ -277,4 +345,12 @@ float check_temp()
    
    return tempr;
   
+}
+
+void setBrightness(int led, int brightness) {
+  // set the brightness of pin 9:
+  Serial.println("seeting brightness");
+  analogWrite(led, brightness);
+  // change the brightness for next time through the loop:
+  delay(3000);
 }
